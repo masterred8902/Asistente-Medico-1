@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control ESP32 - Dashboard IoT</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-light: #4895ef;
+      --primary-dark: #3f37c9;
+      --secondary: #3a0ca3;
+      --success: #4cc9f0;
+      --danger: #f72585;
+      --warning: #f8961e;
+      --info: #4895ef;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --light-gray: #e9ecef;
+      --white: #ffffff;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --radius: 12px;
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f5f7ff;
+      color: var(--dark);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: var(--white);
+      padding: 1.5rem 0;
+      box-shadow: var(--shadow);
+      position: relative;
+      z-index: 10;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo i {
+      font-size: 1.75rem;
+    }
+
+    .logo h1 {
+      font-weight: 600;
+      font-size: 1.5rem;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-size: 0.9rem;
+    }
+
+    .connection-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #4ade80;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+      padding: 1.25rem 1.5rem;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .card-body {
+      padding: 1.5rem;
+    }
+
+    .sensor-data {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .data-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
+    }
+
+    .data-item {
+      background: var(--light-gray);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .data-value {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin: 0.25rem 0;
+    }
+
+    .data-label {
+      font-size: 0.8rem;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .data-unit {
+      font-size: 0.9rem;
+      color: var(--gray);
+    }
+
+    .slider-container {
+      margin: 1.5rem 0;
+    }
+
+    .slider {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: var(--light-gray);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .slider::-webkit-slider-thumb:hover {
+      background: var(--primary-dark);
+      transform: scale(1.1);
+    }
+
+    .slider-value {
+      text-align: center;
+      font-size: 1.1rem;
+      margin-top: 0.5rem;
+      font-weight: 500;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      padding: 0.75rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--white);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: var(--white);
+    }
+
+    .btn-success:hover {
+      background: #3ab8e0;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: var(--white);
+    }
+
+    .btn-danger:hover {
+      background: #e5177e;
+      transform: translateY(-2px);
+    }
+
+    .btn-warning {
+      background: var(--warning);
+      color: var(--white);
+    }
+
+    .btn-warning:hover {
+      background: #e68a19;
+      transform: translateY(-2px);
+    }
+
+    .direction-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+
+    .direction-btn {
+      padding: 1rem;
+      font-size: 1.2rem;
+    }
+
+    .center-btn {
+      grid-column: 2;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+
+    .status-active {
+      background-color: #4ade80;
+      animation: pulse 1.5s infinite;
+    }
+
+    .status-inactive {
+      background-color: var(--danger);
+    }
+
+    .status-waiting {
+      background-color: var(--warning);
+      animation: pulse 1.5s infinite;
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .alert-warning {
+      background-color: rgba(248, 150, 30, 0.15);
+      color: #b36b00;
+    }
+
+    .alert-success {
+      background-color: rgba(76, 201, 240, 0.15);
+      color: #0077a3;
+    }
+
+    .alert-danger {
+      background-color: rgba(247, 37, 133, 0.15);
+      color: #c3116a;
+    }
+
+    .sensor-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--light-gray);
+    }
+
+    /* Estilos para la cámara */
+    .camera-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .camera-feed {
+      width: 100%;
+      max-width: 640px;
+      height: auto;
+      border-radius: 8px;
+      border: 2px solid var(--light-gray);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+      
+      .direction-buttons {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .center-btn {
+        grid-column: span 2;
+      }
+    }
+
+    /* Animaciones adicionales */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+    .card:nth-child(3) { animation-delay: 0.3s; }
+    .card:nth-child(4) { animation-delay: 0.4s; }
+    .card:nth-child(5) { animation-delay: 0.5s; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <div class="logo">
+        <i class="fas fa-microchip"></i>
+        <h1>Dashboard IoT ESP32</h1>
+      </div>
+      <div class="connection-status">
+        <span class="connection-dot"></span>
+        <span id="connection-text">Conectado al broker</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="dashboard">
+      <!-- Cámara en Vivo -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fas fa-camera"></i> Cámara en Vivo</h2>
+        </div>
+        <div class="card-body">
+          <div class="camera-container">
+            <img src="{{ url_for('video_feed') }}" class="camera-feed" width="640" height="480" alt="Transmisión en vivo">
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-success" onclick="controlCamera('start')">
+              <i class="fas fa-play"></i> Iniciar Transmisión
+            </button>
+            <button class="btn btn-danger" onclick="controlCamera('stop')">
+              <i class="fas fa-stop"></i> Detener Transmisión
+            </button>
+          </div>
+          <div class="sensor-status">
+            <div>
+              <span class="status-indicator status-active" id="cameraStatus"></span>
+              <span id="cameraStatusText">Activa</span>
+            </div>
+            <div>
+              <small>Resolución: 640x480</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Control de Motores -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fas fa-cogs"></i> Control de Motores</h2>
+        </div>
+        <div class="card-body">
+          <div class="slider-container">
+            <input type="range" min="0" max="100" value="50" class="slider" id="speedSlider" oninput="updateSpeedLabel(this.value)">
+            <div class="slider-value">Velocidad: <span id="speedLabel">50</span>%</div>
+          </div>
+          
+          <div class="direction-buttons">
+            <button class="btn btn-primary direction-btn" onclick="motor('forward')"><i class="fas fa-arrow-up"></i> Adelante</button>
+            <button class="btn btn-primary direction-btn" onclick="motor('left')"><i class="fas fa-arrow-left"></i> Izquierda</button>
+            <button class="btn btn-danger direction-btn center-btn" onclick="motor('stop')"><i class="fas fa-stop"></i> Detener</button>
+            <button class="btn btn-primary direction-btn" onclick="motor('right')"><i class="fas fa-arrow-right"></i> Derecha</button>
+            <button class="btn btn-primary direction-btn" onclick="motor('backward')"><i class="fas fa-arrow-down"></i> Atrás</button>
+          </div>
+          
+          <div class="sensor-status">
+            <div>
+              <span class="status-indicator" id="motoresStatus"></span>
+              <span id="motoresState">Inactivo</span>
+            </div>
+            <div>
+              <span id="motorDir">--</span> | 
+              <span id="motorSpeed">--</span>%
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Termómetro MLX90614 -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fas fa-thermometer-half"></i> Termómetro MLX90614</h2>
+        </div>
+        <div class="card-body">
+          <div id="mlx90614StatusAlert" class="alert alert-warning">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="mlx90614StatusText">Sensor no iniciado</span>
+          </div>
+          
+          <div class="data-group">
+            <div class="data-item">
+              <div class="data-label">Temperatura Ambiente</div>
+              <div class="data-value"><span id="mlxAmbient">--</span> <span class="data-unit">°C</span></div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Temperatura Objeto</div>
+              <div class="data-value"><span id="mlxObject">--</span> <span class="data-unit">°C</span></div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Diferencia</div>
+              <div class="data-value"><span id="mlxDiff">--</span> <span class="data-unit">°C</span></div>
+            </div>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn btn-success" onclick="controlSensor('mlx90614', 'start')">
+              <i class="fas fa-play"></i> Iniciar
+            </button>
+            <button class="btn btn-danger" onclick="controlSensor('mlx90614', 'stop')">
+              <i class="fas fa-stop"></i> Detener
+            </button>
+          </div>
+          
+          <div class="sensor-status">
+            <div>
+              <span class="status-indicator status-inactive" id="mlx90614Status"></span>
+              <span id="mlx90614StatusTextSmall">Inactivo</span>
+            </div>
+            <div>
+              <small>Última lectura: <span id="mlxLastRead">--:--</span></small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sensor de Calidad del Aire -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fas fa-wind"></i> Calidad del Aire</h2>
+        </div>
+        <div class="card-body">
+          <div id="aireStatusAlert" class="alert alert-warning">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="aireStatusText">Sensor no iniciado</span>
+          </div>
+          
+          <div class="data-group">
+            <div class="data-item">
+              <div class="data-label">Temperatura</div>
+              <div class="data-value"><span id="temp">--</span> <span class="data-unit">°C</span></div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Humedad</div>
+              <div class="data-value"><span id="hum">--</span> <span class="data-unit">%</span></div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">AQI</div>
+              <div class="data-value"><span id="aqi">--</span> <span class="data-unit"><span id="clasificacion">--</span></span></div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">TVOC</div>
+              <div class="data-value"><span id="tvoc">--</span> <span class="data-unit">ppb</span></div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">eCO₂</div>
+              <div class="data-value"><span id="eco2">--</span> <span class="data-unit">ppm</span></div>
+            </div>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn btn-success" onclick="controlSensor('aire', 'start')">
+              <i class="fas fa-play"></i> Iniciar
+            </button>
+            <button class="btn btn-danger" onclick="controlSensor('aire', 'stop')">
+              <i class="fas fa-stop"></i> Detener
+            </button>
+          </div>
+          
+          <div class="sensor-status">
+            <div>
+              <span class="status-indicator status-inactive" id="aireStatus"></span>
+              <span id="aireStatusTextSmall">Inactivo</span>
+            </div>
+            <div>
+              <small>Última lectura: <span id="airLastRead">--:--</span></small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sensor ECG -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fas fa-heartbeat"></i> Sensor ECG</h2>
+        </div>
+        <div class="card-body">
+          <div id="ecgStatusAlert" class="alert alert-warning">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="ecgStatusText">Sensor no iniciado</span>
+          </div>
+          
+          <div class="data-group">
+            <div class="data-item">
+              <div class="data-label">BPM</div>
+              <div class="data-value"><span id="ecgBpm">--</span> <span class="data-unit">lpm</span></div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Latidos</div>
+              <div class="data-value"><span id="ecgLatidos">--</span></div>
+            </div>
+          </div>
+          
+          <div class="data-item" style="grid-column: 1 / -1; text-align: left;">
+            <div class="data-label">Valor ECG</div>
+            <div class="data-value"><span id="ecgValor">--</span></div>
+            <div class="data-label">Estado: <span id="ecgEstado">--</span></div>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn btn-success" onclick="controlSensor('ecg', 'start')">
+              <i class="fas fa-play"></i> Iniciar
+            </button>
+            <button class="btn btn-danger" onclick="controlSensor('ecg', 'stop')">
+              <i class="fas fa-stop"></i> Detener
+            </button>
+          </div>
+          
+          <div class="sensor-status">
+            <div>
+              <span class="status-indicator status-inactive" id="ecgStatus"></span>
+              <span id="ecgStatusTextSmall">Inactivo</span>
+            </div>
+            <div>
+              <small>Última lectura: <span id="ecgLastRead">--:--</span></small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sensor MAX30102 -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fas fa-heart-pulse"></i> Sensor MAX30102</h2>
+        </div>
+        <div class="card-body">
+          <div id="oximetroMaX30102StatusAlert" class="alert alert-warning">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="oximetroMaX30102StatusText">Sensor no iniciado</span>
+          </div>
+          
+          <div class="data-group">
+            <div class="data-item">
+              <div class="data-label">SpO₂</div>
+              <div class="data-value"><span id="maxSpo2">--</span> <span class="data-unit">%</span></div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">BPM</div>
+              <div class="data-value"><span id="maxBpm">--</span> <span class="data-unit">lpm</span></div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">IR</div>
+              <div class="data-value"><span id="maxIr">--</span></div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Red</div>
+              <div class="data-value"><span id="maxRed">--</span></div>
+            </div>
+          </div>
+          
+          <div class="data-item" style="grid-column: 1 / -1; text-align: left;">
+            <div class="data-label">Estado pulso: <span id="maxPulso">--</span></div>
+            <div class="data-label">Estado oxígeno: <span id="maxOxigeno">--</span></div>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn btn-success" onclick="controlSensor('oximetroMaX30102', 'start')">
+              <i class="fas fa-play"></i> Iniciar
+            </button>
+            <button class="btn btn-danger" onclick="controlSensor('oximetroMaX30102', 'stop')">
+              <i class="fas fa-stop"></i> Detener
+            </button>
+          </div>
+          
+          <div class="sensor-status">
+            <div>
+              <span class="status-indicator status-inactive" id="oximetroMaX30102Status"></span>
+              <span id="oximetroMaX30102StatusTextSmall">Inactivo</span>
+            </div>
+            <div>
+              <small>Última lectura: <span id="maxLastRead">--:--</span></small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Control Servomotor -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fas fa-robot"></i> Control Servomotor</h2>
+        </div>
+        <div class="card-body">
+          <div id="servoStatusAlert" class="alert alert-warning">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="servoStatusText">Servo no iniciado</span>
+          </div>
+          
+          <div class="slider-container">
+            <input type="range" min="0" max="180" value="90" class="slider" id="servoSlider" oninput="updateServoLabel(this.value)">
+            <div class="slider-value">Ángulo: <span id="servoLabel">90</span>°</div>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn btn-success" onclick="controlServo('start')">
+              <i class="fas fa-play"></i> Mover a posición
+            </button>
+            <button class="btn btn-danger" onclick="controlServo('stop')">
+              <i class="fas fa-stop"></i> Detener
+            </button>
+          </div>
+          
+          <div class="sensor-status">
+            <div>
+              <span class="status-indicator status-inactive" id="servoStatus"></span>
+              <span id="servoStatusTextSmall">Inactivo</span>
+            </div>
+            <div>
+              <small>Último movimiento: <span id="servoLastMove">--:--</span></small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sensor Ultrasónico -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fas fa-ruler-vertical"></i> Sensor Ultrasónico</h2>
+        </div>
+        <div class="card-body">
+          <div id="ultrasonicoStatusAlert" class="alert alert-warning">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="ultrasonicoStatusText">Sensor no iniciado</span>
+          </div>
+          
+          <div class="data-group">
+            <div class="data-item">
+              <div class="data-label">Distancia</div>
+              <div class="data-value"><span id="ultrasonicoDistancia">--</span> <span class="data-unit">cm</span></div>
+            </div>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn btn-success" onclick="controlUltrasonico('start')">
+              <i class="fas fa-play"></i> Iniciar
+            </button>
+            <button class="btn btn-danger" onclick="controlUltrasonico('stop')">
+              <i class="fas fa-stop"></i> Detener
+            </button>
+          </div>
+          
+          <div class="sensor-status">
+            <div>
+              <span class="status-indicator status-inactive" id="ultrasonicoStatus"></span>
+              <span id="ultrasonicoStatusTextSmall">Inactivo</span>
+            </div>
+            <div>
+              <small>Última lectura: <span id="ultrasonicoLastRead">--:--</span></small>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Seguimiento de Objetos -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fas fa-robot"></i> Seguimiento de Objetos</h2>
+        </div>
+        <div class="card-body">
+          <div id="seguimientoStatusAlert" class="alert alert-warning">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="seguimientoStatusText">Modo seguimiento no iniciado</span>
+          </div>
+          
+          <div class="slider-container">
+            <label for="targetDistance">Distancia objetivo (cm):</label>
+            <input type="range" min="5" max="100" value="20" class="slider" id="targetDistance" oninput="updateDistanceLabel(this.value)">
+            <div class="slider-value">Valor: <span id="distanceLabel">20</span> cm</div>
+          </div>
+          
+          <div class="slider-container">
+            <label for="marginDistance">Margen de seguimiento (cm):</label>
+            <input type="range" min="1" max="20" value="5" class="slider" id="marginDistance" oninput="updateMarginLabel(this.value)">
+            <div class="slider-value">Valor: <span id="marginLabel">5</span> cm</div>
+          </div>
+          
+          <div class="slider-container">
+            <label for="seguimientoSpeed">Velocidad (%):</label>
+            <input type="range" min="10" max="100" value="70" class="slider" id="seguimientoSpeed" oninput="updateSpeedSeguimientoLabel(this.value)">
+            <div class="slider-value">Valor: <span id="speedSeguimientoLabel">70</span>%</div>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn btn-success" onclick="controlSeguimiento('start')">
+              <i class="fas fa-play"></i> Iniciar Seguimiento
+            </button>
+            <button class="btn btn-danger" onclick="controlSeguimiento('stop')">
+              <i class="fas fa-stop"></i> Detener Seguimiento
+            </button>
+          </div>
+          
+          <div class="sensor-status">
+            <div>
+              <span class="status-indicator status-inactive" id="seguimientoStatus"></span>
+              <span id="seguimientoStatusTextSmall">Inactivo</span>
+            </div>
+            <div>
+              <small>Última acción: <span id="seguimientoLastAction">--:--</span></small>
+            </div>
+          </div>
+          
+          <div class="data-item" style="margin-top: 1rem; text-align: center;">
+            <div class="data-label">Estado actual:</div>
+            <div class="data-value"><span id="seguimientoEstadoActual">Esperando comando...</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script>
+    // Configuración MQTT (actualizada)
+    const MQTT_CONFIG = {
+      brokerUrl: "wss://test.mosquitto.org:8081/mqtt",
+      topics: {
+        control: {
+          motores: "iot/control/motores",
+          aire: "iot/control/aire",
+          ecg: "iot/control/ecg",
+          max30102: "iot/control/oximetroMaX30102",
+          mlx90614: "iot/control/mlx90614",
+          servo: "iot/control/servo",
+          ultrasonico: "iot/control/ultrasonico",
+          seguimiento: "iot/control/seguimiento",
+          camara: "iot/control/camara"  // Nuevo topic para control de cámara
+        },
+        sensor: {
+          aire: "iot/sensor/aire",
+          ecg: "iot/sensor/ecg",
+          max30102: "iot/sensor/max30102",
+          mlx90614: "iot/sensor/mlx90614",
+          ultrasonico: "iot/sensor/ultrasonico"
+        },
+        status: {
+          motores: "iot/status/motores",
+          servo: "iot/status/servo",
+          seguimiento: "iot/status/seguimiento",
+          camara: "iot/status/camara"  // Nuevo topic para estado de cámara
+        }
+      }
+    };
+
+    // Estados de la aplicación (actualizado)
+    const APP_STATE = {
+      connection: false,
+      sensors: {
+        motores: 'inactive',
+        mlx90614: 'inactive',
+        aire: 'inactive',
+        ecg: 'inactive',
+        oximetroMaX30102: 'inactive',
+        servo: 'inactive',
+        ultrasonico: 'inactive',
+        seguimiento: 'inactive',
+        camara: 'active'  // Nuevo estado para cámara
+      },
+      lastUpdate: {}
+    };
+
+    // Conexión MQTT
+    const client = mqtt.connect(MQTT_CONFIG.brokerUrl);
+
+    // Funciones de utilidad
+    function formatTime(date = new Date()) {
+      return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function updateSensorStatus(sensor, status) {
+      APP_STATE.sensors[sensor] = status;
+      APP_STATE.lastUpdate[sensor] = new Date();
+      
+      const statusElement = document.getElementById(`${sensor}Status`);
+      const statusTextElement = document.getElementById(`${sensor}StatusText`);
+      const statusTextSmallElement = document.getElementById(`${sensor}StatusTextSmall`);
+      const alertElement = document.getElementById(`${sensor}StatusAlert`);
+      const lastReadElement = document.getElementById(`${sensor}LastRead`) || 
+                             document.getElementById(`${sensor}LastMove`);
+      
+      if (lastReadElement && APP_STATE.lastUpdate[sensor]) {
+        lastReadElement.textContent = formatTime(APP_STATE.lastUpdate[sensor]);
+      }
+      
+      if (sensor === 'seguimiento') {
+        document.getElementById('seguimientoLastAction').textContent = 
+          APP_STATE.lastUpdate[sensor] ? formatTime(APP_STATE.lastUpdate[sensor]) : '--:--';
+      }
+      
+      if (!statusElement) return;
+      
+      // Actualizar clases CSS según el estado
+      statusElement.className = 'status-indicator ' + 
+        (status === 'active' ? 'status-active' : 
+         status === 'starting' ? 'status-waiting' : 'status-inactive');
+      
+      // Actualizar textos
+      const statusTexts = {
+        active: ['Sensor activo', 'Activo', 'alert-success', '<i class="fas fa-check-circle"></i> Sensor activo y funcionando'],
+        starting: ['Iniciando sensor...', 'Iniciando', 'alert-warning', '<i class="fas fa-sync-alt fa-spin"></i> Iniciando sensor...'],
+        inactive: ['Sensor inactivo', 'Inactivo', 'alert-warning', '<i class="fas fa-exclamation-circle"></i> Sensor no iniciado']
+      };
+      
+      if (statusTextElement) statusTextElement.textContent = statusTexts[status][0];
+      if (statusTextSmallElement) statusTextSmallElement.textContent = statusTexts[status][1];
+      if (alertElement) {
+        alertElement.className = `alert ${statusTexts[status][2]}`;
+        alertElement.innerHTML = statusTexts[status][3];
+      }
+      
+      // Actualizar estado del motor si es necesario
+      if (sensor === 'motores') {
+        document.getElementById('motoresState').textContent = 
+          status === 'active' ? 'Activo' : 'Inactivo';
+      }
+    }
+
+    // Función para controlar la cámara
+    function controlCamera(action) {
+      if (!APP_STATE.connection) {
+        alert("No conectado al broker MQTT");
+        return;
+      }
+
+      if (action === 'start') {
+        client.publish(MQTT_CONFIG.topics.control.camara, "start");
+        updateSensorStatus('camara', 'active');
+        
+        // Mostrar confirmación
+        document.getElementById('cameraStatusAlert').className = "alert alert-success";
+        document.getElementById('cameraStatusAlert').innerHTML = 
+          `<i class="fas fa-check-circle"></i> Transmisión iniciada`;
+      } 
+      else if (action === 'stop') {
+        client.publish(MQTT_CONFIG.topics.control.camara, "stop");
+        updateSensorStatus('camara', 'inactive');
+        
+        // Mostrar confirmación
+        document.getElementById('cameraStatusAlert').className = "alert alert-danger";
+        document.getElementById('cameraStatusAlert').innerHTML = 
+          `<i class="fas fa-stop-circle"></i> Transmisión detenida`;
+      }
+    }
+
+    // Inicialización
+    document.addEventListener('DOMContentLoaded', function() {
+      // Inicializar estados de los sensores
+      Object.keys(APP_STATE.sensors).forEach(sensor => {
+        updateSensorStatus(sensor, APP_STATE.sensors[sensor]);
+      });
+      
+      // Configurar evento para el slider de velocidad
+      document.getElementById('speedSlider').addEventListener('input', function(e) {
+        document.getElementById('speedLabel').textContent = e.target.value;
+      });
+      
+      // Configurar evento para el slider del servo
+      document.getElementById('servoSlider').addEventListener('input', function(e) {
+        document.getElementById('servoLabel').textContent = e.target.value;
+      });
+    });
+
+    // Eventos MQTT
+    client.on('connect', () => {
+      console.log('✅ Conectado al broker MQTT');
+      APP_STATE.connection = true;
+      document.getElementById('connection-text').textContent = 'Conectado al broker';
+      
+      // Suscribirse a topics
+      const topicsToSubscribe = [
+        MQTT_CONFIG.topics.sensor.aire,
+        MQTT_CONFIG.topics.sensor.ecg,
+        MQTT_CONFIG.topics.sensor.max30102,
+        MQTT_CONFIG.topics.sensor.mlx90614,
+        MQTT_CONFIG.topics.sensor.ultrasonico,
+        MQTT_CONFIG.topics.status.motores,
+        MQTT_CONFIG.topics.status.servo,
+        MQTT_CONFIG.topics.status.seguimiento,
+        MQTT_CONFIG.topics.status.camara  // Suscripción al estado de la cámara
+      ];
+      
+      client.subscribe(topicsToSubscribe, (err) => {
+        if (err) {
+          console.error('Error al suscribirse:', err);
+        } else {
+          console.log('Suscripciones establecidas correctamente');
+        }
+      });
+    });
+
+    client.on('error', (err) => {
+      console.error('Error de conexión MQTT:', err);
+      APP_STATE.connection = false;
+      document.getElementById('connection-text').textContent = 'Error de conexión';
+      document.querySelector('.connection-dot').style.backgroundColor = '#f72585';
+    });
+
+    client.on('offline', () => {
+      console.log('Cliente MQTT desconectado');
+      APP_STATE.connection = false;
+      document.getElementById('connection-text').textContent = 'Desconectado';
+      document.querySelector('.connection-dot').style.backgroundColor = '#6c757d';
+      
+      // Actualizar todos los sensores a inactivo
+      Object.keys(APP_STATE.sensors).forEach(sensor => {
+        updateSensorStatus(sensor, 'inactive');
+      });
+    });
+
+    client.on('message', (topic, message) => {
+      console.log(`Mensaje recibido en [${topic}]:`, message.toString());
+      
+      try {
+        const data = JSON.parse(message.toString());
+        const now = new Date();
+        
+        // Procesar mensaje según el topic
+        if (topic === MQTT_CONFIG.topics.sensor.aire) {
+          // Datos de calidad del aire
+          document.getElementById('temp').textContent = data.temperatura?.toFixed(1) || '--';
+          document.getElementById('hum').textContent = data.humedad?.toFixed(1) || '--';
+          document.getElementById('aqi').textContent = data.aqi || '--';
+          document.getElementById('clasificacion').textContent = data.clasificacion || '--';
+          document.getElementById('tvoc').textContent = data.tvoc || '--';
+          document.getElementById('eco2').textContent = data.eco2 || '--';
+          updateSensorStatus('aire', 'active');
+        } 
+        else if (topic === MQTT_CONFIG.topics.sensor.ecg) {
+          // Datos ECG
+          document.getElementById('ecgValor').textContent = data.valor || '--';
+          document.getElementById('ecgEstado').textContent = data.estado || '--';
+          document.getElementById('ecgBpm').textContent = data.bpm || '--';
+          document.getElementById('ecgLatidos').textContent = data.latidos || '--';
+          updateSensorStatus('ecg', 'active');
+        }
+        else if (topic === MQTT_CONFIG.topics.sensor.max30102) {
+          // Datos MAX30102
+          document.getElementById('maxIr').textContent = data.ir || '--';
+          document.getElementById('maxRed').textContent = data.red || '--';
+          document.getElementById('maxPulso').textContent = data.estado_pulso || '--';
+          document.getElementById('maxOxigeno').textContent = data.estado_oxigeno || '--';
+          document.getElementById('maxSpo2').textContent = data.spo2?.toFixed(1) || '--';
+          document.getElementById('maxBpm').textContent = data.bpm || '--';
+          updateSensorStatus('oximetroMaX30102', 'active');
+        }
+        else if (topic === MQTT_CONFIG.topics.sensor.mlx90614) {
+          // Datos MLX90614
+          document.getElementById('mlxAmbient').textContent = data.temp_ambiente?.toFixed(1) || '--';
+          document.getElementById('mlxObject').textContent = data.temp_objeto?.toFixed(1) || '--';
+          const diff = (data.temp_objeto - data.temp_ambiente)?.toFixed(1);
+          document.getElementById('mlxDiff').textContent = isNaN(diff) ? '--' : diff;
+          updateSensorStatus('mlx90614', 'active');
+        }
+        else if (topic === MQTT_CONFIG.topics.sensor.ultrasonico) {
+          // Datos ultrasónicos
+          document.getElementById('ultrasonicoDistancia').textContent = data.distancia?.toFixed(1) || '--';
+          updateSensorStatus('ultrasonico', 'active');
+        }
+        else if (topic === MQTT_CONFIG.topics.status.motores) {
+          // Estado de motores
+          document.getElementById('motorDir').textContent = data.status || '--';
+          document.getElementById('motorSpeed').textContent = data.speed || '--';
+          updateSensorStatus('motores', data.status === 'stop' ? 'inactive' : 'active');
+        }
+        else if (topic === MQTT_CONFIG.topics.status.servo) {
+          // Estado del servo
+          document.getElementById('servoLabel').textContent = data.angle || '--';
+          document.getElementById('servoSlider').value = data.angle || 90;
+          updateSensorStatus('servo', data.status === 'inactive' ? 'inactive' : 'active');
+        }
+        else if (topic === MQTT_CONFIG.topics.status.seguimiento) {
+          // Estado de seguimiento
+          const estado = data.status === 'active' ? 'active' : 'inactive';
+          updateSensorStatus('seguimiento', estado);
+          
+          if (data.estado) {
+            document.getElementById('seguimientoEstadoActual').textContent = 
+              data.estado.charAt(0).toUpperCase() + data.estado.slice(1);
+          }
+          
+          if (estado === 'inactive') {
+            document.getElementById('seguimientoEstadoActual').textContent = "Seguimiento detenido";
+          }
+        }
+        else if (topic === MQTT_CONFIG.topics.status.camara) {
+          // Estado de la cámara
+          const estado = data.status === 'active' ? 'active' : 'inactive';
+          updateSensorStatus('camara', estado);
+          
+          if (data.message) {
+            const alertElement = document.getElementById('cameraStatusAlert');
+            if (alertElement) {
+              alertElement.className = estado === 'active' ? 'alert alert-success' : 'alert alert-danger';
+              alertElement.innerHTML = `<i class="fas ${estado === 'active' ? 'fa-check-circle' : 'fa-stop-circle'}"></i> ${data.message}`;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error al procesar mensaje:', e);
+      }
+    });
+
+    // Funciones de control
+    function motor(direction) {
+      const speed = document.getElementById('speedSlider').value;
+      const msg = {
+        command: direction,
+        speed: parseInt(speed)
+      };
+      client.publish(MQTT_CONFIG.topics.control.motores, JSON.stringify(msg));
+      updateSensorStatus('motores', 'active');
+    }
+
+    function controlSensor(tipo, accion) {
+      let topic;
+      switch(tipo) {
+        case 'mlx90614':
+          topic = MQTT_CONFIG.topics.control.mlx90614;
+          break;
+        case 'aire':
+          topic = MQTT_CONFIG.topics.control.aire;
+          break;
+        case 'ecg':
+          topic = MQTT_CONFIG.topics.control.ecg;
+          break;
+        case 'oximetroMaX30102':
+          topic = MQTT_CONFIG.topics.control.max30102;
+          break;
+        default:
+          console.error('Tipo de sensor no reconocido:', tipo);
+          return;
+      }
+      
+      updateSensorStatus(tipo, 'starting');
+      client.publish(topic, accion);
+      console.log(`Comando ${accion} enviado a ${topic}`);
+      
+      // Si es detener, actualizar estado inmediatamente
+      if (accion === 'stop') {
+        setTimeout(() => updateSensorStatus(tipo, 'inactive'), 500);
+      }
+    }
+
+    function controlServo(accion) {
+      if (!APP_STATE.connection) {
+        alert("No conectado al broker MQTT");
+        return;
+      }
+
+      if (accion === 'start') {
+        const angle = document.getElementById('servoSlider').value;
+        const msg = {"angle": parseInt(angle)};
+        console.log("Enviando comando servo:", msg);
+        client.publish(MQTT_CONFIG.topics.control.servo, JSON.stringify(msg));
+        updateSensorStatus('servo', 'active');
+        
+        // Mostrar confirmación
+        document.getElementById('servoStatusAlert').className = "alert alert-success";
+        document.getElementById('servoStatusAlert').innerHTML = 
+          `<i class="fas fa-check-circle"></i> Comando enviado: Mover a ${angle}°`;
+      } 
+      else if (accion === 'stop') {
+        console.log("Enviando comando stop al servo");
+        client.publish(MQTT_CONFIG.topics.control.servo, "stop");
+        updateSensorStatus('servo', 'inactive');
+        
+        // Mostrar confirmación
+        document.getElementById('servoStatusAlert').className = "alert alert-danger";
+        document.getElementById('servoStatusAlert').innerHTML = 
+          `<i class="fas fa-stop-circle"></i> Servo detenido`;
+      }
+    }
+
+    function controlUltrasonico(accion) {
+      updateSensorStatus('ultrasonico', 'starting');
+      client.publish(MQTT_CONFIG.topics.control.ultrasonico, accion);
+      console.log(`Comando ${accion} enviado a ultrasonico`);
+      
+      // Si es detener, actualizar estado inmediatamente
+      if (accion === 'stop') {
+        setTimeout(() => updateSensorStatus('ultrasonico', 'inactive'), 500);
+      }
+    }
+
+    function controlSeguimiento(accion) {
+      if (!APP_STATE.connection) {
+        alert("No conectado al broker MQTT");
+        return;
+      }
+
+      if (accion === 'start') {
+        const target = document.getElementById('targetDistance').value;
+        const margin = document.getElementById('marginDistance').value;
+        const speed = document.getElementById('seguimientoSpeed').value;
+        
+        const msg = {
+          command: "start",
+          target: parseFloat(target),
+          margin: parseFloat(margin),
+          speed: parseInt(speed)
+        };
+        
+        client.publish(MQTT_CONFIG.topics.control.seguimiento, JSON.stringify(msg));
+        updateSensorStatus('seguimiento', 'active');
+        
+        // Mostrar confirmación
+        document.getElementById('seguimientoStatusAlert').className = "alert alert-success";
+        document.getElementById('seguimientoStatusAlert').innerHTML = 
+          `<i class="fas fa-check-circle"></i> Seguimiento iniciado: Objetivo ${target}cm (±${margin}cm)`;
+        
+        document.getElementById('seguimientoEstadoActual').textContent = "Buscando objeto...";
+      } 
+      else if (accion === 'stop') {
+        client.publish(MQTT_CONFIG.topics.control.seguimiento, "stop");
+        updateSensorStatus('seguimiento', 'inactive');
+        
+        // Mostrar confirmación
+        document.getElementById('seguimientoStatusAlert').className = "alert alert-danger";
+        document.getElementById('seguimientoStatusAlert').innerHTML = 
+          `<i class="fas fa-stop-circle"></i> Seguimiento detenido`;
+        
+        document.getElementById('seguimientoEstadoActual').textContent = "Seguimiento detenido";
+      }
+    }
+
+    function updateDistanceLabel(value) {
+      document.getElementById('distanceLabel').textContent = value;
+    }
+
+    function updateMarginLabel(value) {
+      document.getElementById('marginLabel').textContent = value;
+    }
+
+    function updateSpeedSeguimientoLabel(value) {
+      document.getElementById('speedSeguimientoLabel').textContent = value;
+    }
+
+    function updateSpeedLabel(value) {
+      document.getElementById('speedLabel').textContent = value;
+    }
+
+    function updateServoLabel(value) {
+      document.getElementById('servoLabel').textContent = value;
+    }
+  </script>
+</body>
+</html>
