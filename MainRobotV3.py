@@ -284,7 +284,7 @@ def monitorear_max():
         client.publish(TOPIC_SENSOR_MAX, json.dumps(firebase_data))
         enviar_a_firebase("max30102/data", firebase_data)
         time.sleep(0.2)
-
+#para ver los datos de las temperatura
 def monitorear_mlx90614():
     global monitoreando_mlx
     monitoreando_mlx = True
@@ -328,7 +328,7 @@ def monitorear_mlx90614():
             mostrar_en_oled("MLX90614", "Error:", "No se pudo leer", "temperatura", "", "Reintentando...")
         
         time.sleep(2)
-
+#nos permite medir la distancia
 def medir_distancia():
     trig.off()
     time.sleep_us(5)
@@ -337,7 +337,7 @@ def medir_distancia():
     trig.off()
     dur = time_pulse_us(echo, 1, 30000)
     return (dur * 0.0343) / 2 if dur > 0 else None
-
+#para verificar el ultrasonico que nos permitira ver los datos del ultrasonico
 def monitorear_ultrasonico():
     global monitoreando_ultrasonico
     monitoreando_ultrasonico = True
@@ -368,7 +368,7 @@ def monitorear_ultrasonico():
     
     print("🛑 Monitoreo ultrasónico detenido")
     mostrar_en_oled("Ultrasonico", "detenido", "Regresando", "al menu...", "", "")
-
+#este es un control para manejar el robot
 def control_motores(direction, speed=100):
     speed = max(0, min(100, int(speed)))
     pwm = int(1023 * speed / 100)
@@ -379,7 +379,7 @@ def control_motores(direction, speed=100):
     elif direction == "right": in2.value(1); in3.value(1)
     if direction != "stop": ena.duty(pwm); enb.duty(pwm)
     client.publish(TOPIC_STATUS_MOTORES, json.dumps({"status": direction, "speed": speed}))
-
+#metodo para el sensor ultrasonic
 def seguir_objeto():
     global seguimiento_activo
     seguimiento_activo = True
@@ -449,7 +449,7 @@ def seguir_objeto():
     client.publish(TOPIC_STATUS_SEGUIMIENTO, json.dumps(estado_final))
     enviar_a_firebase("seguimiento/status", estado_final)
     mostrar_en_oled("Modo Seguimiento", "Detenido", "", "Motores apagados", "", "")
-
+#llama al MQTT para funcionar
 def mqtt_callback(topic, msg):
     global monitoreando_aire, monitoreando_ecg, monitoreando_max, monitoreando_mlx
     global monitoreando_ultrasonico, seguimiento_activo, DISTANCIA_OBJETIVO, MARGEN_SEGUIMIENTO, VELOCIDAD_SEGUIMIENTO
@@ -510,7 +510,7 @@ def mqtt_callback(topic, msg):
                 seguimiento_activo = False
         except Exception as e:
             print("Error comando seguimiento:", e)
-
+#main que nos permitira ejecutarlo
 def main():
     global client, ens160, aht21, oled
     if not connect_wifi():
@@ -548,6 +548,6 @@ def main():
             enviar_datos_sensor()
             time.sleep(2)
         time.sleep(0.1)
-
+#ejecucion
 if __name__ == "__main__":
     main()
